@@ -66,13 +66,13 @@ Deno.serve(async (req: Request) => {
     // housekeeping: thumbnails + SEO of videos finished more than 7 days ago are erased
     const cleanup = async () => {
       const cutoff = new Date(Date.now() - 7 * 864e5).toISOString();
-      const { data: old } = await admin.from("videos").select("id,yt_thumb_path,fb_thumb_path,seo_title,seo_desc,seo_tags,fb_caption")
+      const { data: old } = await admin.from("videos").select("id,yt_thumb_path,ig_thumb_path,fb_thumb_path,seo_title,seo_desc,seo_tags,fb_caption")
         .eq("stage", "done").lt("posted_at", cutoff)
-        .or("yt_thumb_path.not.is.null,fb_thumb_path.not.is.null,seo_title.not.is.null,seo_desc.not.is.null,seo_tags.not.is.null,fb_caption.not.is.null").limit(50);
+        .or("yt_thumb_path.not.is.null,ig_thumb_path.not.is.null,fb_thumb_path.not.is.null,seo_title.not.is.null,seo_desc.not.is.null,seo_tags.not.is.null,fb_caption.not.is.null").limit(50);
       if (!old?.length) return 0;
-      const paths = old.flatMap((v: any) => [v.yt_thumb_path, v.fb_thumb_path]).filter(Boolean);
+      const paths = old.flatMap((v: any) => [v.yt_thumb_path, v.ig_thumb_path, v.fb_thumb_path]).filter(Boolean);
       if (paths.length) await admin.storage.from("vt-assets").remove(paths);
-      await admin.from("videos").update({ yt_thumb_path: null, fb_thumb_path: null, seo_title: null, seo_desc: null, seo_tags: null, fb_caption: null }).in("id", old.map((v: any) => v.id));
+      await admin.from("videos").update({ yt_thumb_path: null, ig_thumb_path: null, fb_thumb_path: null, seo_title: null, seo_desc: null, seo_tags: null, fb_caption: null }).in("id", old.map((v: any) => v.id));
       return old.length;
     };
 
