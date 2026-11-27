@@ -1,0 +1,3 @@
+-- Applied 2026-11-27 via Supabase MCP (see project ypthrftjqppthmdnisxf):
+-- videos.kind ('video'|'reel'), ig_link, ig_at;
+-- vt_add_video(+p_kind), vt_set_stage (reel: confirmed -> ready), vt_set_upload (+ig; reel done needs yt+fb+ig)

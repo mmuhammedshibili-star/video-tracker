@@ -108,7 +108,8 @@ textarea.cin{width:100%;min-height:90px;padding:10px;border:1.5px solid var(--am
 
 .up{display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid var(--line);border-radius:12px;margin-top:8px}
 .up .pl{font-weight:800;width:92px;flex:none}
-.up.yt .pl{color:#e02b2b}.up.fb .pl{color:#1877f2}
+.up.yt .pl{color:#e02b2b}.up.fb .pl{color:#1877f2}.up.ig .pl{color:#c13584}
+.kseg{display:flex;gap:6px;margin-bottom:12px}.kseg button{flex:1;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:8px 4px;font-size:13.5px;font-weight:700;color:var(--mut)}.kseg button.on{background:var(--g);border-color:var(--g);color:#fff}
 .up input{flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;outline:none;font-size:13.5px}
 .up .ok{background:var(--g);color:#fff;border-radius:9px;padding:9px 12px;font-weight:700;flex:none}
 .up.done{background:var(--gl);border-color:#bcdcca}
@@ -116,7 +117,7 @@ textarea.cin{width:100%;min-height:90px;padding:10px;border:1.5px solid var(--am
 .up a{color:#1d5fd0;font-weight:700;font-size:13.5px;text-decoration:none}
 .links{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .links a{flex:1;text-align:center;padding:10px;border-radius:10px;font-weight:700;text-decoration:none;color:#fff}
-.links a.yt{background:#e02b2b}.links a.fb{background:#1877f2}
+.links a.yt{background:#e02b2b}.links a.fb{background:#1877f2}.links a.ig{background:#c13584}
 .more{display:flex;justify-content:flex-end;gap:4px;margin-top:8px}
 
 .addbtn{display:block;width:100%;background:var(--g);color:#fff;border-radius:12px;padding:14px;font-weight:800;font-size:15.5px;margin-bottom:12px;box-shadow:0 3px 10px rgba(11,61,43,.25)}
@@ -206,6 +207,8 @@ const LATE_HOURS = 48;
 
 let me=null, team=[], videos=[], changes={};
 let view={mode:"pending",doctor:null,tab:"pending"};
+let kindF="all"; // all | video | reel
+const isReel=v=>v.kind==="reel";
 let openId=null, writingFor=null, lastLoad=0, busy=false, lastStamp=null, armed=null;
 
 const $=s=>document.querySelector(s);
@@ -328,7 +331,11 @@ function render(){
   if(writingFor&&document.getElementById("cin"))return;
   let h="";
   if(pushState==="off") h+=`<div class="nbar">🔔 പുതിയ പണി ഫോണിൽ അറിയാൻ<button data-bell>ഓൺ ആക്കുക</button></div>`;
-  if(!isUploader()) h+=`<button class="addbtn" data-add>+ പുതിയ വീഡിയോ</button>`;
+  if(!isUploader()) h+=`<button class="addbtn" data-add>+ പുതിയ വീഡിയോ / റീൽ</button>`;
+  const nR=videos.filter(v=>isReel(v)&&v.stage!=="done").length;
+  h+=`<div class="kseg"><button data-kind="all" class="${kindF==="all"?"on":""}">എല്ലാം</button><button data-kind="video" class="${kindF==="video"?"on":""}">🎬 വീഡിയോ</button><button data-kind="reel" class="${kindF==="reel"?"on":""}">🎞️ റീൽസ്${nR?` (${nR})`:""}</button></div>`;
+  const all=videos;videos=kindF==="all"?all:all.filter(v=>(v.kind||"video")===kindF);
+  try{
   let list;
   if(isUploader()){
     h+=`<div class="seg"><button data-tab="pending" class="${view.tab==="pending"?"on":""}">അപ്‌ലോഡ് ചെയ്യാൻ (${videos.filter(v=>v.stage==="ready").length})</button><button data-tab="done" class="${view.tab==="done"?"on":""}">കഴിഞ്ഞവ</button></div>`;
@@ -356,6 +363,7 @@ function render(){
   list=view.tab==="done"?list.sort((a,b)=>new Date(b.posted_at||b.updated_at)-new Date(a.posted_at||a.updated_at)):sortList(list);
   h+=list.length?list.map(bar).join(""):`<div class="empty">${view.tab==="done"?"ഒന്നുമില്ല":"പെൻഡിങ് ഒന്നുമില്ല 🎉"}</div>`;
   $("#main").innerHTML=h;
+  }finally{videos=all;}
 }
 
 function bar(v){
@@ -363,7 +371,7 @@ function bar(v){
   const showDoc=!(me.role==="doctor"&&!isAdmin());
   let h=`<div class="bar ${open?"open":""} ${needsMe(v)?"mine":""}" style="--c:${s.c}" id="bar-${v.id}">
     <button class="bhead" data-open="${v.id}"><div class="bmain"><div class="btitle">${esc(v.title)}</div>
-      <div class="bmeta"><span class="chip">${s.ml}</span>${v.direct?`<span class="chip" style="--c:#b26a00">⏩ ഡയറക്ട്</span>`:""}${pc?`<span class="cnt">${pc} മാറ്റം</span>`:""}${showDoc?`<span>${esc(nameOf(v.doctor_id))}</span>`:""}
+      <div class="bmeta">${isReel(v)?`<span class="chip" style="--c:#c13584">🎞️ റീൽ</span>`:""}<span class="chip">${s.ml}</span>${v.direct?`<span class="chip" style="--c:#b26a00">⏩ ഡയറക്ട്</span>`:""}${pc?`<span class="cnt">${pc} മാറ്റം</span>`:""}${showDoc?`<span>${esc(nameOf(v.doctor_id))}</span>`:""}
       <span class="${isLate(v)?"late":""}">${v.stage==="done"?fmt(v.posted_at||v.updated_at):ago(v.stage_at)}</span></div></div>
       <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>`;
   if(open){
@@ -384,7 +392,7 @@ function changesList(v,canTick,canDel){
   return list.map(c=>`<label class="chg ${c.done?"done":""}"><input type="checkbox" data-tick="${c.id}" ${c.done?"checked":""} ${canTick?"":"disabled"}><span class="t">${esc(c.body)}</span>${canDel&&!c.done?`<button class="x" data-delchg="${c.id}">×</button>`:""}</label>`).join("");
 }
 function linksRow(v){
-  const a=[];if(v.yt_link)a.push(`<a class="yt" href="${esc(v.yt_link)}" target="_blank" rel="noopener">▶ YouTube</a>`);if(v.fb_link)a.push(`<a class="fb" href="${esc(v.fb_link)}" target="_blank" rel="noopener">f Facebook</a>`);
+  const a=[];if(v.yt_link)a.push(`<a class="yt" href="${esc(v.yt_link)}" target="_blank" rel="noopener">▶ YouTube</a>`);if(v.fb_link)a.push(`<a class="fb" href="${esc(v.fb_link)}" target="_blank" rel="noopener">f Facebook</a>`);if(v.ig_link)a.push(`<a class="ig" href="${esc(v.ig_link)}" target="_blank" rel="noopener">◎ Instagram</a>`);
   return a.length?`<div class="links">${a.join("")}</div>`:"";
 }
 
@@ -394,15 +402,16 @@ function body(v){
   if(isEditor()){
     if(st==="new")return src(v)+confirmBtn(`${v.id}:editing`,"▶ എഡിറ്റിംഗ് തുടങ്ങി");
     if(st==="editing")return confirmBtn(`${v.id}:discussion`,"📤 ഡിസ്കഷനിൽ ഇട്ടു")+changesList(v,true,false)+`<button class="undo" data-mv="${v.id}:new">↩ തിരിച്ച്</button>`;
-    if(st==="discussion")return changesList(v,true,false)+confirmBtn(`${v.id}:confirmed`,"✅ കൺഫേം (ഡോക്ടർ പറഞ്ഞു)")+`<button class="undo" data-mv="${v.id}:editing">↩ എഡിറ്റിംഗിലേക്ക്</button>`;
+    if(st==="discussion")return changesList(v,true,false)+confirmBtn(`${v.id}:confirmed`,isReel(v)?"✅ കൺഫേം → അപ്‌ലോഡർക്ക്":"✅ കൺഫേം (ഡോക്ടർ പറഞ്ഞു)")+`<button class="undo" data-mv="${v.id}:editing">↩ എഡിറ്റിംഗിലേക്ക്</button>`;
     if(st==="confirmed"&&!(v.t_yt_thumb||v.t_fb_thumb||v.t_seo||v.t_fb_video))return tilesHtml(v)+`<button class="undo" data-mv="${v.id}:discussion">↩ കൺഫേം തിരിച്ചെടുക്കുക</button>`;
+    if(isReel(v)&&st==="ready")return waitLine("അപ്‌ലോഡർ");
     if(st==="confirmed"||st==="ready")return tilesHtml(v)+(st==="ready"?waitLine("അപ്‌ലോഡർ"):"");
     return linksRow(v);
   }
   /* UPLOADER */
   if(isUploader()){
     if(st!=="ready"&&st!=="done")return waitLine(STAGES[st].ml);
-    return upRow(v,"yt","YouTube")+upRow(v,"fb","Facebook");
+    return isReel(v)?upRow(v,"yt","YT Shorts")+upRow(v,"fb","Facebook")+upRow(v,"ig","Instagram"):upRow(v,"yt","YouTube")+upRow(v,"fb","Facebook");
   }
   /* DOCTOR (incl. admin) */
   const mine=isDoctorOf(v);
@@ -412,10 +421,10 @@ function body(v){
 function doctorBody(v,st,mine){
   if(st==="discussion"&&mine){
     if(writingFor===v.id)return changesList(v,false,true)+`<textarea class="cin" id="cin" placeholder="ഓരോ മാറ്റവും ഓരോ വരിയിൽ"></textarea><div class="row2"><button class="big warn" data-savechg="${v.id}">എഡിറ്റർക്ക് അയക്കുക</button><button class="big" style="background:#eef2f0;color:var(--ink);flex:0 0 90px" data-cancel>✕</button></div>`;
-    return changesList(v,false,true)+`<div class="row2">${confirmBtn(`${v.id}:confirmed`,"✅ കൺഫേം")}<button class="big warn" data-write="${v.id}">✍️ മാറ്റം</button></div>`;
+    return changesList(v,false,true)+`<div class="row2">${confirmBtn(`${v.id}:confirmed`,isReel(v)?"✅ കൺഫേം → അപ്‌ലോഡർക്ക്":"✅ കൺഫേം")}<button class="big warn" data-write="${v.id}">✍️ മാറ്റം</button></div>`;
   }
   if(st==="confirmed"&&mine&&!(v.t_yt_thumb||v.t_fb_thumb||v.t_seo||v.t_fb_video))return waitLine("എഡിറ്റർ: തമ്പ്നെയിൽ, SEO, FB വീഡിയോ")+`<button class="undo" data-mv="${v.id}:discussion">↩ കൺഫേം തിരിച്ചെടുക്കുക</button>`;
-  const who={new:"എഡിറ്റിംഗ് തുടങ്ങിയിട്ടില്ല",editing:"എഡിറ്റർ എഡിറ്റ് ചെയ്യുന്നു",discussion:"ഡിസ്കഷനിൽ",confirmed:`എഡിറ്റർ: ${TASKS.filter(t=>v[t[1]]).length}/4`,ready:`അപ്‌ലോഡർ: ${v.yt_at?"YouTube ✓ ":""}${v.fb_at?"FB ✓":""}`||"അപ്‌ലോഡർ",done:"കഴിഞ്ഞു"}[st];
+  const who={new:"എഡിറ്റിംഗ് തുടങ്ങിയിട്ടില്ല",editing:"എഡിറ്റർ എഡിറ്റ് ചെയ്യുന്നു",discussion:"ഡിസ്കഷനിൽ",confirmed:`എഡിറ്റർ: ${TASKS.filter(t=>v[t[1]]).length}/4`,ready:`അപ്‌ലോഡർ: ${v.yt_at?"YouTube ✓ ":""}${v.fb_at?"FB ✓ ":""}${v.ig_at?"Insta ✓":""}`,done:"കഴിഞ്ഞു"}[st];
   return (st==="done"?"":waitLine(who))+changesList(v,false,false)+linksRow(v);
 }
 function tilesHtml(v){return `<div class="tiles">${TASKS.map(([k,col,i,l])=>`<button class="tile ${v[col]?"on":""}" data-task="${v.id}:${k}:${v[col]?0:1}" ${v.stage==="ready"&&(v.yt_at||v.fb_at)?"disabled":""}><span class="i">${i}</span>${l}</button>`).join("")}</div>`;}
@@ -429,9 +438,11 @@ function upRow(v,p,name){
 async function setStage(id,stage){
   const {error}=await sb.rpc("vt_set_stage",{p_id:id,p_stage:stage});
   if(error){toast(errMsg(error),true);return load(true);}
-  toast("✔ "+STAGES[stage].ml);
+  const rl=isReel(videos.find(x=>x.id===id)||{});
+  toast(rl&&stage==="confirmed"?"✔ അപ്‌ലോഡർക്ക് അയച്ചു":"✔ "+STAGES[stage].ml);
   if(stage==="discussion")notify(id,"discussion");
-  if(stage==="confirmed")notify(id,"confirmed");
+  if(stage==="confirmed")notify(id,rl?"ready":"confirmed");
+  if(stage==="ready")notify(id,"ready");
   await load(true);
 }
 $("#main").addEventListener("click",async e=>{
@@ -442,6 +453,7 @@ $("#main").addEventListener("click",async e=>{
   if(d.all!==undefined){view={mode:"all",doctor:null,tab:"pending"};openId=null;return render();}
   if(d.home!==undefined){view={mode:"pending",doctor:null,tab:"pending"};openId=null;return render();}
   if(d.tab){view.tab=d.tab;openId=null;return render();}
+  if(d.kind){kindF=d.kind;openId=null;return render();}
   if(d.open){openId=openId===d.open?null:d.open;writingFor=null;armed=null;render();if(openId)setTimeout(()=>document.getElementById("bar-"+openId)?.scrollIntoView({block:"nearest",behavior:"smooth"}),40);return;}
   if(d.arm){
     if(armed!==d.arm){armed=d.arm;render();setTimeout(()=>{if(armed===d.arm){armed=null;render();}},3500);return;}
@@ -480,7 +492,7 @@ $("#main").addEventListener("click",async e=>{
     b.disabled=true;
     const {data,error}=await sb.rpc("vt_set_upload",{p_id:id,p_platform:p,p_done:true,p_link:link||null});
     if(error){toast(errMsg(error),true);return load(true);}
-    toast("✔ "+(p==="yt"?"YouTube":"Facebook"));if(data==="done")notify(id,"done");
+    toast("✔ "+({yt:"YouTube",fb:"Facebook",ig:"Instagram"}[p]));if(data==="done")notify(id,"done");
     return load(true);
   }
   if(d.unup){const [id,p]=d.unup.split(":");if(!confirm("ഇത് തിരിച്ച് മാറ്റണോ?"))return;
@@ -497,13 +509,16 @@ function addForm(){
   const docs=doctors(),pick=isAdmin()||isEditor();
   const def=(view.mode==="doctor"&&view.doctor)||(me.role==="doctor"?me.user_id:docs[0]?.user_id);
   const sel={telegram:true,system:false};
-  modal(`<h3>പുതിയ വീഡിയോ</h3>
-    <label class="fld"><span>വീഡിയോയുടെ പേര്</span><input id="vt" maxlength="140" placeholder="ഉദാ: പ്രോസ്റ്റേറ്റ് വീക്കം"></label>
+  let kind=kindF==="reel"?"reel":"video";
+  modal(`<h3>പുതിയത് ചേർക്കുക</h3>
+    <div class="fld"><span>ഇനം</span><div class="pick"><button data-kd="video" class="${kind==="video"?"on":""}">🎬 വീഡിയോ</button><button data-kd="reel" class="${kind==="reel"?"on":""}">🎞️ റീൽ</button></div></div>
+    <label class="fld"><span>പേര്</span><input id="vt" maxlength="140" placeholder="ഉദാ: പ്രോസ്റ്റേറ്റ് വീക്കം"></label>
     <div class="fld"><span>ഫയൽ എവിടെ? (രണ്ടും തിരഞ്ഞെടുക്കാം)</span><div class="pick"><button data-src="telegram" class="on">📨 Telegram</button><button data-src="system">💻 System</button></div></div>
-    ${me.role==="doctor"?`<div class="pick"><button data-direct>⏩ എഡിറ്റർ വേണ്ട, നേരിട്ട് അപ്‌ലോഡർക്ക്</button></div>`:""}
+    ${me.role==="doctor"||isAdmin()?`<div class="pick"><button data-direct>⏩ എഡിറ്റർ വേണ്ട, നേരിട്ട് അപ്‌ലോഡർക്ക്</button></div>`:""}
     ${pick?`<label class="fld"><span>ഡോക്ടർ</span><select id="vd">${docs.map(d=>`<option value="${d.user_id}" ${d.user_id===def?"selected":""}>${esc(d.display_name)}</option>`).join("")}</select></label>`:""}
     <div class="mrow"><button class="btn sec" data-close>Cancel</button><button class="btn" id="vsave">ചേർക്കുക</button></div>`);
   $("#mbox").querySelectorAll("[data-src]").forEach(b=>b.onclick=()=>{const k=b.dataset.src;sel[k]=!sel[k];if(!sel.telegram&&!sel.system)sel[k]=true;b.classList.toggle("on",sel[k]);});
+  $("#mbox").querySelectorAll("[data-kd]").forEach(b=>b.onclick=()=>{kind=b.dataset.kd;$("#mbox").querySelectorAll("[data-kd]").forEach(x=>x.classList.toggle("on",x.dataset.kd===kind));});
   let direct=false;
   const dBtn=$("#mbox").querySelector("[data-direct]");
   if(dBtn)dBtn.onclick=()=>{direct=!direct;dBtn.classList.toggle("on",direct);};
@@ -512,7 +527,7 @@ function addForm(){
     const title=$("#vt").value.trim();if(!title)return toast("പേര് എഴുതൂ",true);
     if(videos.find(x=>x.stage!=="done"&&x.title.trim().toLowerCase()===title.toLowerCase())&&!confirm("ഇതേ പേരിൽ ഒരു വീഡിയോ ഉണ്ട്. എന്നാലും ചേർക്കണോ?"))return;
     $("#vsave").disabled=true;
-    const {data,error}=await sb.rpc("vt_add_video",{p_title:title,p_doctor:$("#vd")?.value||def,p_source:sel.telegram&&sel.system?"both":sel.system?"system":"telegram",p_direct:direct});
+    const {data,error}=await sb.rpc("vt_add_video",{p_title:title,p_doctor:$("#vd")?.value||def,p_source:sel.telegram&&sel.system?"both":sel.system?"system":"telegram",p_direct:direct,p_kind:kind});
     if(error){toast(errMsg(error),true);$("#vsave").disabled=false;return;}
     closeModal();toast(direct?"⏩ അപ്‌ലോഡർക്ക് അയച്ചു":"✔ എഡിറ്റർക്ക് അയച്ചു");notify(data,direct?"ready":"new");load(true);
   };
