@@ -1,0 +1,5 @@
+-- Applied 2026-11-27 via Supabase MCP:
+-- videos: seo_title, seo_desc, seo_tags, fb_caption, yt_thumb_path, fb_thumb_path
+-- vt_can_attach / vt_set_seo / vt_set_thumb (admin, editor, video's doctor; not after done)
+-- public bucket vt-assets (3 MB, images), insert/delete policies for attachers; uploader read-only
+-- vt-push edge function erases thumbnails + SEO 7 days after a video is done
