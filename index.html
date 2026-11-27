@@ -119,7 +119,8 @@ textarea.cin{width:100%;min-height:90px;padding:10px;border:1.5px solid var(--am
 .thx{aspect-ratio:16/9;border-radius:8px;background:#eef2f0;display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:13px}
 .thb{display:flex;gap:6px;margin-top:8px}.thb .btn{width:auto;flex:1;padding:9px 8px;font-size:13.5px;text-align:center;cursor:pointer}
 .sech{font-weight:800;margin:6px 0 8px}
-.cp{border:1.5px solid var(--line);border-radius:12px;padding:9px 10px;margin-bottom:8px}.cpl{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:700;color:var(--mut);margin-bottom:4px}.cpt{white-space:pre-wrap;font-size:14px;word-break:break-word}
+.cp{border:1.5px solid var(--line);border-radius:12px;padding:9px 10px;margin-bottom:8px}.cpl{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:700;color:var(--mut);margin-bottom:4px}.fld .cpl span{margin:0}.cbtn{background:var(--gl);color:var(--g);border:1.5px solid #cfe3d8;border-radius:9px;padding:5px 10px;font-size:12.5px;font-weight:800;flex:none}.cbtn.ok{background:var(--g);color:#fff;border-color:var(--g)}
+.cpt{white-space:pre-wrap;font-size:14px;word-break:break-word}
 .kseg{display:flex;gap:6px;margin-bottom:12px}.kseg button{flex:1;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:8px 4px;font-size:13.5px;font-weight:700;color:var(--mut)}.kseg button.on{background:var(--g);border-color:var(--g);color:#fff}
 .up input{flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;outline:none;font-size:13.5px}
 .up .ok{background:var(--g);color:#fff;border-radius:9px;padding:9px 12px;font-weight:700;flex:none}
@@ -537,6 +538,10 @@ async function dl(url,name){
   try{const r=await fetch(url);if(!r.ok)throw 0;const b=await r.blob();const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},3000);}
   catch{window.open(url,"_blank");}
 }
+async function copyText(t){
+  try{await navigator.clipboard.writeText(t);return true;}catch{}
+  try{const ta=document.createElement("textarea");ta.value=t;ta.style.cssText="position:fixed;opacity:0";document.body.appendChild(ta);ta.select();const ok=document.execCommand("copy");ta.remove();return ok;}catch{return false;}
+}
 async function autoTick(v,task){ // editor: uploading here also ticks the matching tile
   const col={yt_thumb:"t_yt_thumb",fb_thumb:"t_fb_thumb",seo:"t_seo"}[task];
   if(!(isEditor()||isAdmin())||v.stage!=="confirmed"||v[col])return;
@@ -550,9 +555,10 @@ function assetsForm(v){
   const thumb=(w,l)=>{const p=v[w+"_thumb_path"];
     return `<div class="th ${w}"><div class="thl">${l}</div>${p?`<img src="${pubUrl(p)}" alt="">`:`<div class="thx">ഇതുവരെ ഇട്ടിട്ടില്ല</div>`}
       <div class="thb">${edit?`<label class="btn sec">${p?"🔄 മാറ്റുക":"⬆ അപ്‌ലോഡ്"}<input type="file" accept="image/*" hidden data-thf="${w}"></label>${p?`<button class="btn sec" data-thdel="${w}">🗑</button>`:""}`:""}${p?`<button class="btn" data-thdl="${w}">⬇ Download</button>`:""}</div></div>`;};
+  const cbtn=id=>`<button class="cbtn" data-copy="${id}">📋 Copy</button>`;
   const fld=(id,l,val,rows)=>edit
-    ?`<label class="fld"><span>${l}</span>${rows?`<textarea id="${id}" rows="${rows}">${esc(val||"")}</textarea>`:`<input id="${id}" value="${esc(val||"")}">`}</label>`
-    :(val?`<div class="cp"><div class="cpl">${l}<button class="lnk" data-copy="${id}">📋 Copy</button></div><div class="cpt" id="${id}">${esc(val)}</div></div>`:"");
+    ?`<div class="fld"><div class="cpl"><span>${l}</span>${cbtn(id)}</div>${rows?`<textarea id="${id}" rows="${rows}">${esc(val||"")}</textarea>`:`<input id="${id}" value="${esc(val||"")}">`}</div>`
+    :(val?`<div class="cp"><div class="cpl"><span>${l}</span>${cbtn(id)}</div><div class="cpt" id="${id}">${esc(val)}</div></div>`:"");
   modal(`<h3>${esc(v.title)}</h3>
     ${thumb("yt","▶ YouTube തമ്പ്നെയിൽ")}${thumb("ig","◎ Instagram / Facebook തമ്പ്നെയിൽ")}${v.fb_thumb_path?thumb("fb","f Facebook തമ്പ്നെയിൽ"):""}
     <div class="sech">🔎 SEO</div>
@@ -582,7 +588,11 @@ function assetsForm(v){
     if(old)sb.storage.from(BUCKET).remove([old]).catch(()=>{});reopenAssets(v.id);
   });
   box.querySelectorAll("[data-thdl]").forEach(b=>b.onclick=()=>{const w=b.dataset.thdl;dl(pubUrl(v[w+"_thumb_path"]),`${slug}-${{yt:"youtube",ig:"instagram",fb:"facebook"}[w]}.jpg`);});
-  box.querySelectorAll("[data-copy]").forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText($("#"+b.dataset.copy).textContent);toast("📋 Copied");}catch{toast("Copy പറ്റിയില്ല",true);}});
+  box.querySelectorAll("[data-copy]").forEach(b=>b.onclick=async()=>{
+    const el=$("#"+b.dataset.copy),txt=("value" in el?el.value:el.textContent).trim();
+    if(!txt)return toast("ഒന്നും എഴുതിയിട്ടില്ല",true);
+    if(await copyText(txt)){b.textContent="✓ Copied";b.classList.add("ok");setTimeout(()=>{b.textContent="📋 Copy";b.classList.remove("ok");},1800);}
+    else toast("Copy പറ്റിയില്ല",true);});
   const sv=$("#seosave");if(sv)sv.onclick=async()=>{
     sv.disabled=true;const t=$("#s1").value,dsc=$("#s2").value;
     const {error}=await sb.rpc("vt_set_seo",{p_id:v.id,p_title:t,p_desc:dsc,p_tags:$("#s3").value,p_fb:$("#s4").value});
