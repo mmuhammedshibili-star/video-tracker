@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b3d2b">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Video Tracker">
+<title>Misriyya Video Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--g:#0b3d2b;--g3:#1f7a55;--gl:#e8f3ee;--bg:#f3f6f4;--ink:#16211c;--mut:#6b7a73;--line:#e1e8e4;--red:#d6453d;--amber:#e0a106}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Malayalam",sans-serif;font-size:15px}
+button{font:inherit;cursor:pointer;border:0}
+input,textarea,select{font:inherit}
+.hide{display:none!important}
+
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(160deg,var(--g),#06251a)}
+.lbox{background:#fff;border-radius:18px;padding:26px 22px;width:100%;max-width:360px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.brand{font-weight:800;letter-spacing:.06em;color:var(--g);font-size:18px;text-align:center}
+.sub{color:var(--mut);text-align:center;margin:4px 0 20px;font-size:13px}
+.fld{display:block;margin-bottom:12px}
+.fld span{display:block;font-size:12px;color:var(--mut);margin-bottom:4px;font-weight:600}
+.fld input,.fld select,.fld textarea{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;outline:none}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--g3)}
+.btn{background:var(--g);color:#fff;padding:12px 16px;border-radius:10px;font-weight:700;width:100%}
+.btn:disabled{opacity:.6}
+.btn.sec{background:#eef2f0;color:var(--ink)}
+.err{color:var(--red);font-size:13px;min-height:18px;margin:6px 0 0;text-align:center}
+
+header{position:sticky;top:0;z-index:20;background:var(--g);color:#fff;padding:10px 12px;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.ib{background:transparent;color:#fff;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative}
+.ib:active{background:rgba(255,255,255,.12)}
+.ib .dot{position:absolute;top:7px;right:7px;width:9px;height:9px;border-radius:50%;background:#ff5a4f;box-shadow:0 0 0 2px var(--g)}
+.htitle{flex:1;min-width:0}
+.htitle b{display:block;font-size:15px;letter-spacing:.03em}
+.htitle small{opacity:.75;font-size:12px}
+main{padding:12px 12px 120px;max-width:760px;margin:0 auto}
+
+.nbar{display:flex;align-items:center;gap:10px;background:#fff7e0;border:1px solid #f1dc9c;color:#6b5200;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px;font-weight:600}
+.nbar button{margin-left:auto;background:var(--g);color:#fff;border-radius:8px;padding:7px 12px;font-weight:700;font-size:13px}
+
+.docs{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:8px}
+.dbtn{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:12px 10px;text-align:left;position:relative;color:var(--ink);min-height:58px}
+.dbtn b{display:block;font-size:14px;line-height:1.25}
+.dbtn small{color:var(--mut);font-size:11.5px}
+.dbtn.on{background:var(--g);border-color:var(--g);color:#fff}
+.dbtn.on small{color:#cfe6da}
+.badge{position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;font-size:11px;font-weight:800;min-width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;padding:0 6px;box-shadow:0 0 0 2px var(--bg);animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.35}}
+.allbtn{width:100%;background:var(--gl);color:var(--g);border:1.5px solid #cfe3d8;border-radius:12px;padding:11px;font-weight:700;margin-bottom:14px}
+.allbtn.on{background:var(--g);color:#fff;border-color:var(--g)}
+
+.seg{display:flex;background:#e6ece9;border-radius:12px;padding:4px;margin-bottom:12px}
+.seg button{flex:1;background:transparent;padding:9px 6px;border-radius:9px;font-size:14px;font-weight:700;color:var(--mut)}
+.seg button.on{background:#fff;color:var(--g);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.sechead{display:flex;align-items:center;margin:2px 2px 10px}
+.sechead h2{font-size:15px;margin:0;flex:1}
+.lnk{background:transparent;color:var(--mut);font-size:13px;text-decoration:underline;padding:4px}
+.empty{text-align:center;color:var(--mut);padding:36px 10px;font-size:14px}
+
+.bar{background:#fff;border-radius:14px;margin-bottom:9px;box-shadow:0 1px 2px rgba(0,0,0,.06);border-left:5px solid var(--c);overflow:hidden}
+.bar.mine{box-shadow:0 0 0 2px var(--c) inset,0 1px 2px rgba(0,0,0,.06)}
+.bhead{display:flex;align-items:center;gap:10px;padding:12px;width:100%;background:transparent;text-align:left;color:var(--ink)}
+.bmain{flex:1;min-width:0}
+.btitle{font-weight:700;font-size:15px;line-height:1.3;word-break:break-word}
+.bmeta{font-size:12px;color:var(--mut);margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.chip{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:20px;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--c);white-space:nowrap}
+.late{color:var(--red);font-weight:700}
+.cnt{background:var(--red);color:#fff;border-radius:10px;font-size:11px;font-weight:800;padding:2px 7px}
+.chev{transition:transform .2s;color:var(--mut);flex:none}
+.bar.open .chev{transform:rotate(180deg)}
+.bbody{padding:2px 12px 14px;border-top:1px solid var(--line)}
+.steps{display:flex;gap:3px;margin:12px 0 10px}
+.steps i{flex:1;height:5px;border-radius:3px;background:#e3e9e6}
+.steps i.done{background:var(--g3)}
+.steps i.cur{background:var(--c)}
+.wait{color:var(--mut);font-size:13.5px;padding:4px 0}
+
+.big{display:block;width:100%;padding:15px 12px;border-radius:12px;font-weight:800;font-size:15.5px;background:var(--g);color:#fff;margin-top:8px}
+.big.warn{background:var(--amber);color:#1d1600}
+.big.skip{background:#fff;color:#b26a00;border:1.5px solid #e6b866;font-size:14px;padding:12px}
+.big.skip.armed{background:#b26a00;color:#fff}
+.big.armed{background:#0f8a52;animation:pulse .8s infinite}
+@keyframes pulse{50%{filter:brightness(1.18)}}
+.row2{display:flex;gap:8px}
+.row2 .big{flex:1}
+.undo{display:block;margin:10px auto 0;background:transparent;color:var(--mut);font-size:12.5px;text-decoration:underline}
+
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.tile{padding:14px 8px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:14px;color:var(--ink);text-align:center;line-height:1.3}
+.tile .i{display:block;font-size:20px;margin-bottom:2px}
+.tile.on{background:var(--gl);border-color:var(--g3);color:var(--g)}
+.tile.on .i::after{content:" ✓"}
+.tile:disabled{opacity:.85}
+
+.chg{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:10px;margin-top:6px}
+.chg input{width:22px;height:22px;margin:0;accent-color:var(--g3);flex:none}
+.chg .t{flex:1;font-size:14px;line-height:1.35;white-space:pre-wrap}
+.chg.done .t{text-decoration:line-through;color:var(--mut)}
+.chg .x{background:transparent;color:var(--mut);font-size:20px;padding:0 4px;line-height:1}
+textarea.cin{width:100%;min-height:90px;padding:10px;border:1.5px solid var(--amber);border-radius:10px;outline:none;resize:vertical;margin-top:8px}
+
+.up{display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid var(--line);border-radius:12px;margin-top:8px}
+.up .pl{font-weight:800;width:92px;flex:none}
+.up.yt .pl{color:#e02b2b}.up.fb .pl{color:#1877f2}
+.up input{flex:1;min-width:0;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;outline:none;font-size:13.5px}
+.up .ok{background:var(--g);color:#fff;border-radius:9px;padding:9px 12px;font-weight:700;flex:none}
+.up.done{background:var(--gl);border-color:#bcdcca}
+.up.done .st{flex:1;font-weight:700;color:var(--g)}
+.up a{color:#1d5fd0;font-weight:700;font-size:13.5px;text-decoration:none}
+.links{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.links a{flex:1;text-align:center;padding:10px;border-radius:10px;font-weight:700;text-decoration:none;color:#fff}
+.links a.yt{background:#e02b2b}.links a.fb{background:#1877f2}
+.more{display:flex;justify-content:flex-end;gap:4px;margin-top:8px}
+
+.addbtn{display:block;width:100%;background:var(--g);color:#fff;border-radius:12px;padding:14px;font-weight:800;font-size:15.5px;margin-bottom:12px;box-shadow:0 3px 10px rgba(11,61,43,.25)}
+
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:40}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:270px;max-width:82%;background:#fff;z-index:41;padding:18px 0;transform:translateX(-100%);transition:transform .2s;display:flex;flex-direction:column}
+.drawer.open{transform:none}
+.dhead{padding:0 18px 14px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.dhead b{display:block;font-size:16px}
+.dhead small{color:var(--mut)}
+.ditem{display:block;width:100%;text-align:left;background:transparent;padding:13px 18px;font-size:14.5px;color:var(--ink)}
+.modal{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.mbox{background:#fff;width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto;position:relative;z-index:2}
+@media(min-width:600px){.modal{align-items:center}.mbox{border-radius:18px}}
+.mbox h3{margin:0 0 14px;font-size:17px}
+.mrow{display:flex;gap:8px;margin-top:6px}
+.mrow .btn{flex:1}
+.pick{display:flex;gap:8px;margin-bottom:12px}
+.pick button{flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;color:var(--mut)}
+.pick button.on{border-color:var(--g);background:var(--gl);color:var(--g)}
+.pick button.on::before{content:"✓ "}
+.member{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.member .mi{flex:1;min-width:0}
+.member b{display:block;font-size:14px}
+.member small{color:var(--mut);font-size:12px}
+.member.off{opacity:.5}
+.rolechip{font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;background:var(--gl);color:var(--g)}
+.lbl{font-size:12px;font-weight:700;color:var(--mut);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.04em}
+.note{background:#f7f9f8;border-radius:10px;padding:9px 11px;font-size:13.5px;margin:8px 0}
+.toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:#1d2622;color:#fff;padding:11px 16px;border-radius:10px;font-size:14px;z-index:60;max-width:90%;box-shadow:0 6px 20px rgba(0,0,0,.25);text-align:center}
+.toast.bad{background:var(--red)}
+.loading{text-align:center;color:var(--mut);padding:40px}
+</style>
+</head>
+<body>
+
+<section id="login" class="hide">
+  <form class="lbox" id="loginForm" autocomplete="on">
+    <div class="brand">MISRIYYA HEALTH CARE</div>
+    <div class="sub">Video Tracker</div>
+    <label class="fld"><span>Username</span><input id="lu" autocomplete="username" autocapitalize="none" required></label>
+    <label class="fld"><span>Password</span><input id="lp" type="password" autocomplete="current-password" required></label>
+    <button class="btn" id="lbtn" type="submit">Login</button>
+    <div class="err" id="lerr"></div>
+  </form>
+</section>
+
+<section id="app" class="hide">
+  <header>
+    <button class="ib" id="menuBtn" aria-label="Menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <div class="htitle"><b>VIDEO TRACKER</b><small id="hname"></small></div>
+    <button class="ib" id="bellBtn" aria-label="Notifications"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="dot hide" id="bellDot"></span></button>
+    <button class="ib" id="refreshBtn" aria-label="Refresh"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button>
+  </header>
+  <main id="main"><div class="loading">…</div></main>
+  </section>
+
+<div class="scrim hide" id="scrim"></div>
+<nav class="drawer" id="drawer">
+  <div class="dhead"><b id="dname"></b><small id="drole"></small></div>
+  <button class="ditem" data-go="bell">🔔 Notification</button>
+  <button class="ditem hide" data-go="team" id="teamItem">👥 Team & Logins</button>
+  <button class="ditem" data-go="logout">🚪 Logout</button>
+  <div style="flex:1"></div>
+  <div style="padding:0 18px;color:var(--mut);font-size:11px">Misriyya Healthcare · Video Tracker v2.4</div>
+</nav>
+<div class="modal hide" id="modal"><div class="scrim" style="z-index:1" data-close></div><div class="mbox" id="mbox"></div></div>
+
+<script>
+const SB_URL = "https://ypthrftjqppthmdnisxf.supabase.co";
+const SB_KEY = "sb_publishable_W8lBQVw1nF_xjOqH9_ctNQ_4DSwvAVh";
+const DOMAIN = "team.misriyya.healthcare";
+const sb = supabase.createClient(SB_URL, SB_KEY, {auth:{persistSession:true,autoRefreshToken:true,storageKey:"misriyya-video-auth"}});
+
+const STAGES = {
+  new:        {ml:"പുതിയത്",          c:"#d6453d"},
+  editing:    {ml:"എഡിറ്റിംഗ്",         c:"#2f6fd6"},
+  discussion: {ml:"ഡിസ്കഷൻ",          c:"#7a4cc9"},
+  confirmed:  {ml:"തമ്പ്നെയിൽ & SEO",  c:"#118a8a"},
+  ready:      {ml:"അപ്‌ലോഡ് ചെയ്യാൻ",   c:"#1f7a55"},
+  done:       {ml:"കഴിഞ്ഞു",            c:"#7c8a83"}
+};
+const ORDER = ["new","editing","discussion","confirmed","ready","done"];
+const ROLE_ML = {doctor:"ഡോക്ടർ",editor:"എഡിറ്റർ",uploader:"അപ്‌ലോഡർ"};
+const TASKS = [["yt_thumb","t_yt_thumb","🖼️","YouTube തമ്പ്നെയിൽ"],["fb_thumb","t_fb_thumb","🖼️","FB തമ്പ്നെയിൽ"],["seo","t_seo","🔎","SEO"],["fb_video","t_fb_video","🎞️","FB വീഡിയോ"]];
+const LATE_HOURS = 48;
+
+let me=null, team=[], videos=[], changes={};
+let view={mode:"pending",doctor:null,tab:"pending"};
+let openId=null, writingFor=null, lastLoad=0, busy=false, lastStamp=null, armed=null;
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nameOf=id=>(team.find(t=>t.user_id===id)||{}).display_name||"—";
+const doctors=()=>team.filter(t=>t.role==="doctor"&&t.is_active).sort((a,b)=>a.sort_order-b.sort_order||a.display_name.localeCompare(b.display_name));
+const isAdmin=()=>!!me?.is_admin;
+const isEditor=()=>me?.role==="editor";
+const isUploader=()=>me?.role==="uploader";
+const isDoctorOf=v=>me?.role==="doctor"&&(v.doctor_id===me.user_id||isAdmin());
+
+function toast(m,bad){const t=document.createElement("div");t.className="toast"+(bad?" bad":"");t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),bad?3800:2000);}
+function ago(ts){const m=Math.max(0,(Date.now()-new Date(ts))/6e4);if(m<60)return Math.round(m)+" മിനിറ്റ്";const h=m/60;if(h<24)return Math.round(h)+" മണിക്കൂർ";return Math.round(h/24)+" ദിവസം";}
+function fmt(ts){const d=new Date(ts);return d.toLocaleDateString("en-IN",{day:"numeric",month:"short"});}
+function errMsg(e){const m=(e&&(e.message||e.error))||String(e);
+  if(/not confirmed/.test(m))return "ഡോക്ടർ ഇതുവരെ കൺഫേം ചെയ്തിട്ടില്ല";
+  if(/upload already/.test(m))return "അപ്‌ലോഡ് തുടങ്ങിക്കഴിഞ്ഞു";
+  if(/not ready/.test(m))return "ഇത് അപ്‌ലോഡിന് റെഡിയായിട്ടില്ല";
+  if(/Not allowed/.test(m))return "ഇത് ചെയ്യാൻ പറ്റില്ല. Refresh ചെയ്യൂ.";
+  if(/Failed to fetch|NetworkError/i.test(m))return "നെറ്റ് കണക്ഷൻ ഇല്ല";
+  return m;}
+
+/* ---------- AUTH ---------- */
+let setupMode=false;
+$("#loginForm").addEventListener("submit",async e=>{
+  e.preventDefault(); if(setupMode) return;
+  const u=$("#lu").value.trim().toLowerCase(),p=$("#lp").value;
+  $("#lerr").textContent="";$("#lbtn").disabled=true;
+  const {error}=await sb.auth.signInWithPassword({email:u.includes("@")?u:`${u}@${DOMAIN}`,password:p});
+  $("#lbtn").disabled=false;
+  if(error){$("#lerr").textContent=/fetch/i.test(error.message)?"നെറ്റ് കണക്ഷൻ ഇല്ല":"Username അല്ലെങ്കിൽ password തെറ്റാണ്";return;}
+  start();
+});
+async function start(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){const {data:needs}=await sb.rpc("vt_needs_setup");if(needs===true){showSetup();return;}showLogin();return;}
+  const {data,error}=await sb.rpc("vt_me_row");
+  if(error){if(/JWT|auth/i.test(error.message)){await sb.auth.signOut();showLogin();}else showLogin(errMsg(error));return;}
+  if(!data||!data.user_id){await sb.auth.signOut();showLogin("ഈ അക്കൗണ്ട് ഓഫ് ആണ്. Admin-നോട് ചോദിക്കൂ.");return;}
+  me=data;
+  $("#login").classList.add("hide");$("#app").classList.remove("hide");
+  const roleTxt=ROLE_ML[me.role]+(me.is_admin?" · Admin":"");
+  $("#hname").textContent=me.display_name;$("#dname").textContent=me.display_name;$("#drole").textContent=roleTxt;
+  $("#teamItem").classList.toggle("hide",!me.is_admin);
+  if(isUploader()) view={mode:"pending",doctor:null,tab:"pending"};
+  else if(me.role==="doctor"&&!isAdmin()) view={mode:"doctor",doctor:me.user_id,tab:"pending"};
+  const v=new URLSearchParams(location.search).get("v"); if(v) openId=v;
+  await load();
+  initPush();
+}
+function showLogin(msg){$("#app").classList.add("hide");$("#login").classList.remove("hide");$("#lerr").textContent=msg||"";}
+function showSetup(){
+  setupMode=true;$("#app").classList.add("hide");$("#login").classList.remove("hide");
+  $("#loginForm").innerHTML=`<div class="brand">MISRIYYA HEALTH CARE</div><div class="sub">ആദ്യ സെറ്റപ്പ് · Admin</div>
+    <label class="fld"><span>പേര്</span><input id="sn" value="Dr. Muhammed Shibili" required></label>
+    <label class="fld"><span>Username</span><input id="su" autocapitalize="none" required></label>
+    <label class="fld"><span>Password</span><input id="sp" type="password" required></label>
+    <button class="btn" id="sbtn" type="submit">തുടങ്ങാം</button><div class="err" id="lerr"></div>`;
+  $("#loginForm").onsubmit=async e=>{e.preventDefault();$("#sbtn").disabled=true;
+    const u=$("#su").value.trim().toLowerCase();
+    try{await api("team-admin",{action:"setup",display_name:$("#sn").value,username:u,password:$("#sp").value});
+      const {error}=await sb.auth.signInWithPassword({email:`${u}@${DOMAIN}`,password:$("#sp").value});if(error)throw error;location.reload();}
+    catch(err){$("#lerr").textContent=err.message;$("#sbtn").disabled=false;}};
+}
+async function api(fn,body){
+  const {data:{session}}=await sb.auth.getSession();
+  const r=await fetch(`${SB_URL}/functions/v1/${fn}`,{method:"POST",headers:{"Content-Type":"application/json",apikey:SB_KEY,Authorization:"Bearer "+(session?.access_token||SB_KEY)},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({ok:false,error:"Server error"}));
+  if(!j.ok)throw new Error(j.error||"Failed");return j;
+}
+const notify=(video_id,event)=>api("vt-push",{action:"notify",video_id,event}).catch(()=>{});
+
+/* ---------- DATA ---------- */
+async function load(silent){
+  if(busy)return;busy=true;
+  try{
+    const since=new Date(Date.now()-120*864e5).toISOString();
+    const [s,t,v]=await Promise.all([
+      sb.rpc("vt_last_change"),
+      sb.from("video_team").select("user_id,username,display_name,role,is_admin,is_active,sort_order"),
+      sb.from("videos").select("*").or(`stage.neq.done,posted_at.gte.${since}`).order("created_at",{ascending:false}).limit(1000)
+    ]);
+    if(t.error)throw t.error;if(v.error)throw v.error;
+    team=t.data;videos=v.data;if(!s.error)lastStamp=s.data;
+    const ids=videos.filter(x=>x.stage==="discussion"||x.stage==="editing").map(x=>x.id);
+    changes={};
+    if(ids.length){const c=await sb.from("video_changes").select("id,video_id,body,done").in("video_id",ids).order("created_at");if(!c.error)c.data.forEach(r=>(changes[r.video_id]||=[]).push(r));}
+    lastLoad=Date.now();render();
+  }catch(e){if(!silent)toast(errMsg(e),true);}finally{busy=false;}
+}
+async function checkForChanges(){
+  if(!me||writingFor||busy)return;
+  const {data,error}=await sb.rpc("vt_last_change");if(error)return;
+  if(data!==lastStamp)await load(true);
+}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&me&&Date.now()-lastLoad>60000)checkForChanges();});
+setInterval(()=>{if(!document.hidden)checkForChanges();},300000);
+navigator.serviceWorker?.addEventListener("message",e=>{
+  if(e.data?.type==="refresh"&&!writingFor)load(true);
+  if(e.data?.type==="open"){const id=new URL(e.data.url).searchParams.get("v");if(id){openId=id;load(true);}}
+});
+
+/* ---------- WHO NEEDS TO ACT ---------- */
+const pendingChanges=v=>(changes[v.id]||[]).filter(c=>!c.done).length;
+function needsMe(v){
+  if(!me)return false;
+  if(isEditor())return ["new","editing","confirmed"].includes(v.stage)||(v.stage==="discussion"&&pendingChanges(v)>0);
+  if(isUploader())return v.stage==="ready";
+  return v.stage==="discussion"&&(v.doctor_id===me.user_id);
+}
+const isLate=v=>needsMe(v)&&(Date.now()-new Date(v.stage_at))/36e5>LATE_HOURS;
+function sortList(list){
+  const pri=isEditor()?["discussion","confirmed","new","editing","ready"]:isUploader()?["ready"]:["discussion","confirmed","ready","editing","new"];
+  return list.sort((a,b)=>{const na=needsMe(a)?0:1,nb=needsMe(b)?0:1;if(na!==nb)return na-nb;
+    const pa=pri.indexOf(a.stage),pb=pri.indexOf(b.stage);if(pa!==pb)return pa-pb;return new Date(a.stage_at)-new Date(b.stage_at);});
+}
+
+/* ---------- RENDER ---------- */
+function render(){
+  if(writingFor&&document.getElementById("cin"))return;
+  let h="";
+  if(pushState==="off") h+=`<div class="nbar">🔔 പുതിയ പണി ഫോണിൽ അറിയാൻ<button data-bell>ഓൺ ആക്കുക</button></div>`;
+  if(!isUploader()) h+=`<button class="addbtn" data-add>+ പുതിയ വീഡിയോ</button>`;
+  let list;
+  if(isUploader()){
+    h+=`<div class="seg"><button data-tab="pending" class="${view.tab==="pending"?"on":""}">അപ്‌ലോഡ് ചെയ്യാൻ (${videos.filter(v=>v.stage==="ready").length})</button><button data-tab="done" class="${view.tab==="done"?"on":""}">കഴിഞ്ഞവ</button></div>`;
+    list=videos.filter(v=>view.tab==="pending"?v.stage==="ready":v.stage==="done");
+  }else if(me.role==="doctor"&&!isAdmin()){
+    const mine=videos.filter(v=>v.doctor_id===me.user_id);
+    h+=`<div class="seg"><button data-tab="pending" class="${view.tab==="pending"?"on":""}">പെൻഡിങ് (${mine.filter(v=>v.stage!=="done").length})</button><button data-tab="done" class="${view.tab==="done"?"on":""}">കഴിഞ്ഞവ</button></div>`;
+    list=mine.filter(v=>view.tab==="pending"?v.stage!=="done":v.stage==="done");
+  }else{
+    h+=`<div class="docs">`+doctors().map(d=>{
+      const n=videos.filter(v=>v.doctor_id===d.user_id&&needsMe(v)).length,tot=videos.filter(v=>v.doctor_id===d.user_id&&v.stage!=="done").length;
+      return `<button class="dbtn ${view.mode==="doctor"&&view.doctor===d.user_id?"on":""}" data-doc="${d.user_id}"><b>${esc(d.display_name)}</b><small>${tot} പെൻഡിങ്</small>${n?`<span class="badge">${n}</span>`:""}</button>`;}).join("")+`</div>`;
+    h+=`<button class="allbtn ${view.mode==="all"?"on":""}" data-all>📂 All Videos</button>`;
+    if(view.mode==="pending"){
+      h+=`<div class="sechead"><h2>പെൻഡിങ് (${videos.filter(v=>v.stage!=="done").length})</h2></div>`;
+      list=videos.filter(v=>v.stage!=="done");
+    }else{
+      const d=view.mode==="doctor"?view.doctor:null;
+      const base=videos.filter(v=>!d||v.doctor_id===d);
+      h+=`<div class="sechead"><h2>${d?esc(nameOf(d)):"All Videos"}</h2><button class="lnk" data-home>✕</button></div>`;
+      h+=`<div class="seg"><button data-tab="pending" class="${view.tab==="pending"?"on":""}">പെൻഡിങ് (${base.filter(v=>v.stage!=="done").length})</button><button data-tab="done" class="${view.tab==="done"?"on":""}">കഴിഞ്ഞവ</button></div>`;
+      list=base.filter(v=>view.tab==="pending"?v.stage!=="done":v.stage==="done");
+    }
+  }
+  list=view.tab==="done"?list.sort((a,b)=>new Date(b.posted_at||b.updated_at)-new Date(a.posted_at||a.updated_at)):sortList(list);
+  h+=list.length?list.map(bar).join(""):`<div class="empty">${view.tab==="done"?"ഒന്നുമില്ല":"പെൻഡിങ് ഒന്നുമില്ല 🎉"}</div>`;
+  $("#main").innerHTML=h;
+}
+
+function bar(v){
+  const s=STAGES[v.stage],open=openId===v.id,pc=pendingChanges(v),idx=ORDER.indexOf(v.stage);
+  const showDoc=!(me.role==="doctor"&&!isAdmin());
+  let h=`<div class="bar ${open?"open":""} ${needsMe(v)?"mine":""}" style="--c:${s.c}" id="bar-${v.id}">
+    <button class="bhead" data-open="${v.id}"><div class="bmain"><div class="btitle">${esc(v.title)}</div>
+      <div class="bmeta"><span class="chip">${s.ml}</span>${v.direct?`<span class="chip" style="--c:#b26a00">⏩ ഡയറക്ട്</span>`:""}${pc?`<span class="cnt">${pc} മാറ്റം</span>`:""}${showDoc?`<span>${esc(nameOf(v.doctor_id))}</span>`:""}
+      <span class="${isLate(v)?"late":""}">${v.stage==="done"?fmt(v.posted_at||v.updated_at):ago(v.stage_at)}</span></div></div>
+      <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>`;
+  if(open){
+    h+=`<div class="bbody"><div class="steps">${ORDER.map((st,i)=>`<i class="${i<idx?"done":i===idx?"cur":""}"></i>`).join("")}</div>`;
+    h+=body(v);
+    if(isAdmin()||(v.doctor_id===me.user_id&&v.stage==="new"))h+=`<div class="more"><button class="lnk" data-menu="${v.id}">⋯</button></div>`;
+    h+=`</div>`;
+  }
+  return h+`</div>`;
+}
+const confirmBtn=(key,label,cls="")=>`<button class="big ${cls} ${armed===key?"armed":""}" data-arm="${key}">${armed===key?"✔ ഉറപ്പാണ്":label}</button>`;
+const waitLine=t=>`<div class="wait">⏳ ${t}</div>`;
+const SRC={telegram:"📨 Telegram",system:"💻 System",both:"📨 Telegram + 💻 System"};
+const src=v=>`<div class="wait" style="padding-top:0">${SRC[v.source]||SRC.telegram}</div>`;
+
+function changesList(v,canTick,canDel){
+  const list=changes[v.id]||[];
+  return list.map(c=>`<label class="chg ${c.done?"done":""}"><input type="checkbox" data-tick="${c.id}" ${c.done?"checked":""} ${canTick?"":"disabled"}><span class="t">${esc(c.body)}</span>${canDel&&!c.done?`<button class="x" data-delchg="${c.id}">×</button>`:""}</label>`).join("");
+}
+function linksRow(v){
+  const a=[];if(v.yt_link)a.push(`<a class="yt" href="${esc(v.yt_link)}" target="_blank" rel="noopener">▶ YouTube</a>`);if(v.fb_link)a.push(`<a class="fb" href="${esc(v.fb_link)}" target="_blank" rel="noopener">f Facebook</a>`);
+  return a.length?`<div class="links">${a.join("")}</div>`:"";
+}
+
+function body(v){
+  const st=v.stage;
+  /* EDITOR */
+  if(isEditor()){
+    if(st==="new")return src(v)+confirmBtn(`${v.id}:editing`,"▶ എഡിറ്റിംഗ് തുടങ്ങി");
+    if(st==="editing")return confirmBtn(`${v.id}:discussion`,"📤 ഡിസ്കഷനിൽ ഇട്ടു")+changesList(v,true,false)+`<button class="undo" data-mv="${v.id}:new">↩ തിരിച്ച്</button>`;
+    if(st==="discussion")return changesList(v,true,false)+confirmBtn(`${v.id}:confirmed`,"✅ കൺഫേം (ഡോക്ടർ പറഞ്ഞു)")+`<button class="undo" data-mv="${v.id}:editing">↩ എഡിറ്റിംഗിലേക്ക്</button>`;
+    if(st==="confirmed"&&!(v.t_yt_thumb||v.t_fb_thumb||v.t_seo||v.t_fb_video))return tilesHtml(v)+`<button class="undo" data-mv="${v.id}:discussion">↩ കൺഫേം തിരിച്ചെടുക്കുക</button>`;
+    if(st==="confirmed"||st==="ready")return tilesHtml(v)+(st==="ready"?waitLine("അപ്‌ലോഡർ"):"");
+    return linksRow(v);
+  }
+  /* UPLOADER */
+  if(isUploader()){
+    if(st!=="ready"&&st!=="done")return waitLine(STAGES[st].ml);
+    return upRow(v,"yt","YouTube")+upRow(v,"fb","Facebook");
+  }
+  /* DOCTOR (incl. admin) */
+  const mine=isDoctorOf(v);
+  const direct=(mine&&["new","editing","discussion","confirmed"].includes(st)&&writingFor!==v.id)?confirmBtn(`${v.id}:direct`,"⏩ നേരിട്ട് അപ്‌ലോഡർക്ക്","skip"):"";
+  return doctorBody(v,st,mine)+direct;
+}
+function doctorBody(v,st,mine){
+  if(st==="discussion"&&mine){
+    if(writingFor===v.id)return changesList(v,false,true)+`<textarea class="cin" id="cin" placeholder="ഓരോ മാറ്റവും ഓരോ വരിയിൽ"></textarea><div class="row2"><button class="big warn" data-savechg="${v.id}">എഡിറ്റർക്ക് അയക്കുക</button><button class="big" style="background:#eef2f0;color:var(--ink);flex:0 0 90px" data-cancel>✕</button></div>`;
+    return changesList(v,false,true)+`<div class="row2">${confirmBtn(`${v.id}:confirmed`,"✅ കൺഫേം")}<button class="big warn" data-write="${v.id}">✍️ മാറ്റം</button></div>`;
+  }
+  if(st==="confirmed"&&mine&&!(v.t_yt_thumb||v.t_fb_thumb||v.t_seo||v.t_fb_video))return waitLine("എഡിറ്റർ: തമ്പ്നെയിൽ, SEO, FB വീഡിയോ")+`<button class="undo" data-mv="${v.id}:discussion">↩ കൺഫേം തിരിച്ചെടുക്കുക</button>`;
+  const who={new:"എഡിറ്റിംഗ് തുടങ്ങിയിട്ടില്ല",editing:"എഡിറ്റർ എഡിറ്റ് ചെയ്യുന്നു",discussion:"ഡിസ്കഷനിൽ",confirmed:`എഡിറ്റർ: ${TASKS.filter(t=>v[t[1]]).length}/4`,ready:`അപ്‌ലോഡർ: ${v.yt_at?"YouTube ✓ ":""}${v.fb_at?"FB ✓":""}`||"അപ്‌ലോഡർ",done:"കഴിഞ്ഞു"}[st];
+  return (st==="done"?"":waitLine(who))+changesList(v,false,false)+linksRow(v);
+}
+function tilesHtml(v){return `<div class="tiles">${TASKS.map(([k,col,i,l])=>`<button class="tile ${v[col]?"on":""}" data-task="${v.id}:${k}:${v[col]?0:1}" ${v.stage==="ready"&&(v.yt_at||v.fb_at)?"disabled":""}><span class="i">${i}</span>${l}</button>`).join("")}</div>`;}
+function upRow(v,p,name){
+  const at=v[p+"_at"],link=v[p+"_link"];
+  if(at)return `<div class="up ${p} done"><span class="pl">${name}</span><span class="st">✓</span>${link?`<a href="${esc(link)}" target="_blank" rel="noopener">ലിങ്ക്</a>`:""}<button class="lnk" data-unup="${v.id}:${p}">↩</button></div>`;
+  return `<div class="up ${p}"><span class="pl">${name}</span><input id="ln-${p}-${v.id}" placeholder="ലിങ്ക്" inputmode="url" autocapitalize="none"><button class="ok" data-up="${v.id}:${p}">ഇട്ടു</button></div>`;
+}
+
+/* ---------- ACTIONS ---------- */
+async function setStage(id,stage){
+  const {error}=await sb.rpc("vt_set_stage",{p_id:id,p_stage:stage});
+  if(error){toast(errMsg(error),true);return load(true);}
+  toast("✔ "+STAGES[stage].ml);
+  if(stage==="discussion")notify(id,"discussion");
+  if(stage==="confirmed")notify(id,"confirmed");
+  await load(true);
+}
+$("#main").addEventListener("click",async e=>{
+  const b=e.target.closest("button,input[type=checkbox]");if(!b)return;const d=b.dataset;
+  if(d.bell!==undefined)return enablePush();
+  if(d.add!==undefined)return addForm();
+  if(d.doc){view={mode:"doctor",doctor:d.doc,tab:"pending"};openId=null;return render();}
+  if(d.all!==undefined){view={mode:"all",doctor:null,tab:"pending"};openId=null;return render();}
+  if(d.home!==undefined){view={mode:"pending",doctor:null,tab:"pending"};openId=null;return render();}
+  if(d.tab){view.tab=d.tab;openId=null;return render();}
+  if(d.open){openId=openId===d.open?null:d.open;writingFor=null;armed=null;render();if(openId)setTimeout(()=>document.getElementById("bar-"+openId)?.scrollIntoView({block:"nearest",behavior:"smooth"}),40);return;}
+  if(d.arm){
+    if(armed!==d.arm){armed=d.arm;render();setTimeout(()=>{if(armed===d.arm){armed=null;render();}},3500);return;}
+    armed=null;const [id,st]=d.arm.split(":");b.disabled=true;
+    if(st==="direct"){const {error}=await sb.rpc("vt_send_direct",{p_id:id});if(error){toast(errMsg(error),true);return load(true);}toast("⏩ അപ്‌ലോഡർക്ക് അയച്ചു");notify(id,"ready");return load(true);}
+    return setStage(id,st);
+  }
+  if(d.mv){const [id,st]=d.mv.split(":");if(!confirm("തിരിച്ച് മാറ്റണോ?"))return;return setStage(id,st);}
+  if(d.write){writingFor=d.write;render();document.getElementById("cin")?.focus();return;}
+  if(d.cancel!==undefined){writingFor=null;return render();}
+  if(d.savechg){
+    const lines=$("#cin").value.split("\n").map(s=>s.trim()).filter(Boolean);
+    if(!lines.length)return toast("മാറ്റം എഴുതൂ",true);
+    b.disabled=true;writingFor=null;
+    const {error}=await sb.rpc("vt_add_changes",{p_id:d.savechg,p_lines:lines});
+    if(error)toast(errMsg(error),true);else{toast("എഡിറ്റർക്ക് അയച്ചു");notify(d.savechg,"changes");}
+    return load(true);
+  }
+  if(d.tick){
+    const done=b.checked;b.disabled=true;
+    const {error}=await sb.rpc("vt_toggle_change",{p_change:d.tick,p_done:done});
+    if(error){toast(errMsg(error),true);b.checked=!done;b.disabled=false;return;}
+    for(const k in changes){const c=changes[k].find(x=>x.id===d.tick);if(c)c.done=done;}return render();
+  }
+  if(d.delchg){e.preventDefault();if(!confirm("ഈ മാറ്റം ഒഴിവാക്കണോ?"))return;await sb.rpc("vt_delete_change",{p_change:d.delchg});return load(true);}
+  if(d.task){
+    const [id,k,val]=d.task.split(":");b.disabled=true;
+    const {data,error}=await sb.rpc("vt_set_task",{p_id:id,p_task:k,p_val:val==="1"});
+    if(error){toast(errMsg(error),true);return load(true);}
+    if(data==="ready"&&val==="1"){toast("✔ അപ്‌ലോഡറിന് അയച്ചു");notify(id,"ready");}
+    return load(true);
+  }
+  if(d.up){
+    const [id,p]=d.up.split(":");const link=document.getElementById(`ln-${p}-${id}`)?.value.trim();
+    if(!link&&!confirm("ലിങ്ക് ഇല്ലാതെ സേവ് ചെയ്യണോ?"))return;
+    b.disabled=true;
+    const {data,error}=await sb.rpc("vt_set_upload",{p_id:id,p_platform:p,p_done:true,p_link:link||null});
+    if(error){toast(errMsg(error),true);return load(true);}
+    toast("✔ "+(p==="yt"?"YouTube":"Facebook"));if(data==="done")notify(id,"done");
+    return load(true);
+  }
+  if(d.unup){const [id,p]=d.unup.split(":");if(!confirm("ഇത് തിരിച്ച് മാറ്റണോ?"))return;
+    const {error}=await sb.rpc("vt_set_upload",{p_id:id,p_platform:p,p_done:false,p_link:null});if(error)toast(errMsg(error),true);return load(true);}
+  if(d.menu)return videoMenu(videos.find(v=>v.id===d.menu));
+});
+
+/* ---------- MODALS ---------- */
+function modal(html){$("#mbox").innerHTML=html;$("#modal").classList.remove("hide");}
+function closeModal(){$("#modal").classList.add("hide");$("#mbox").innerHTML="";}
+$("#modal").addEventListener("click",e=>{if(e.target.hasAttribute("data-close"))closeModal();});
+
+function addForm(){
+  const docs=doctors(),pick=isAdmin()||isEditor();
+  const def=(view.mode==="doctor"&&view.doctor)||(me.role==="doctor"?me.user_id:docs[0]?.user_id);
+  const sel={telegram:true,system:false};
+  modal(`<h3>പുതിയ വീഡിയോ</h3>
+    <label class="fld"><span>വീഡിയോയുടെ പേര്</span><input id="vt" maxlength="140" placeholder="ഉദാ: പ്രോസ്റ്റേറ്റ് വീക്കം"></label>
+    <div class="fld"><span>ഫയൽ എവിടെ? (രണ്ടും തിരഞ്ഞെടുക്കാം)</span><div class="pick"><button data-src="telegram" class="on">📨 Telegram</button><button data-src="system">💻 System</button></div></div>
+    ${me.role==="doctor"?`<div class="pick"><button data-direct>⏩ എഡിറ്റർ വേണ്ട, നേരിട്ട് അപ്‌ലോഡർക്ക്</button></div>`:""}
+    ${pick?`<label class="fld"><span>ഡോക്ടർ</span><select id="vd">${docs.map(d=>`<option value="${d.user_id}" ${d.user_id===def?"selected":""}>${esc(d.display_name)}</option>`).join("")}</select></label>`:""}
+    <div class="mrow"><button class="btn sec" data-close>Cancel</button><button class="btn" id="vsave">ചേർക്കുക</button></div>`);
+  $("#mbox").querySelectorAll("[data-src]").forEach(b=>b.onclick=()=>{const k=b.dataset.src;sel[k]=!sel[k];if(!sel.telegram&&!sel.system)sel[k]=true;b.classList.toggle("on",sel[k]);});
+  let direct=false;
+  const dBtn=$("#mbox").querySelector("[data-direct]");
+  if(dBtn)dBtn.onclick=()=>{direct=!direct;dBtn.classList.toggle("on",direct);};
+  setTimeout(()=>$("#vt").focus(),60);
+  $("#vsave").onclick=async()=>{
+    const title=$("#vt").value.trim();if(!title)return toast("പേര് എഴുതൂ",true);
+    if(videos.find(x=>x.stage!=="done"&&x.title.trim().toLowerCase()===title.toLowerCase())&&!confirm("ഇതേ പേരിൽ ഒരു വീഡിയോ ഉണ്ട്. എന്നാലും ചേർക്കണോ?"))return;
+    $("#vsave").disabled=true;
+    const {data,error}=await sb.rpc("vt_add_video",{p_title:title,p_doctor:$("#vd")?.value||def,p_source:sel.telegram&&sel.system?"both":sel.system?"system":"telegram",p_direct:direct});
+    if(error){toast(errMsg(error),true);$("#vsave").disabled=false;return;}
+    closeModal();toast(direct?"⏩ അപ്‌ലോഡർക്ക് അയച്ചു":"✔ എഡിറ്റർക്ക് അയച്ചു");notify(data,direct?"ready":"new");load(true);
+  };
+}
+function videoMenu(v){
+  modal(`<h3>${esc(v.title)}</h3>
+    <label class="fld"><span>പേര്</span><input id="et" value="${esc(v.title)}"></label>
+    <button class="btn" id="esave">പേര് സേവ്</button>
+    ${isAdmin()?`<label class="fld" style="margin-top:14px"><span>Stage</span><select id="es">${ORDER.map(s=>`<option value="${s}" ${s===v.stage?"selected":""}>${STAGES[s].ml}</option>`).join("")}</select></label><button class="btn sec" id="estage">Stage മാറ്റുക</button>`:""}
+    <button class="btn" id="edel" style="background:var(--red);margin-top:14px">🗑 Delete</button>`);
+  $("#esave").onclick=async()=>{const {error}=await sb.rpc("vt_edit_video",{p_id:v.id,p_title:$("#et").value,p_note:v.note});if(error)return toast(errMsg(error),true);closeModal();toast("Saved");load(true);};
+  if($("#estage"))$("#estage").onclick=async()=>{closeModal();await setStage(v.id,$("#es").value);};
+  $("#edel").onclick=async()=>{if(!confirm("Delete ചെയ്യണോ?"))return;const {error}=await sb.rpc("vt_delete_video",{p_id:v.id});if(error)return toast(errMsg(error),true);closeModal();openId=null;load(true);};
+}
+function teamForm(){
+  const list=[...team].sort((a,b)=>(b.is_active-a.is_active)||a.role.localeCompare(b.role)||a.sort_order-b.sort_order);
+  modal(`<h3>Team & Logins</h3>
+    ${list.map(t=>`<div class="member ${t.is_active?"":"off"}"><div class="mi"><b>${esc(t.display_name)}</b><small>@${esc(t.username)}${t.is_active?"":" · Off"}</small></div><span class="rolechip">${ROLE_ML[t.role]}</span><button class="lnk" data-mem="${t.user_id}">മാറ്റുക</button></div>`).join("")}
+    <div class="lbl">പുതിയ ആൾ</div>
+    <label class="fld"><span>പേര്</span><input id="tn" placeholder="ഉദാ: Dr. Fathima Sahla"></label>
+    <label class="fld"><span>റോൾ</span><select id="tr"><option value="doctor">ഡോക്ടർ</option><option value="editor">എഡിറ്റർ</option><option value="uploader">അപ്‌ലോഡർ</option></select></label>
+    <label class="fld"><span>Username</span><input id="tu" autocapitalize="none"></label>
+    <label class="fld"><span>Password</span><input id="tp" autocapitalize="none"></label>
+    <div class="mrow"><button class="btn sec" data-close>Close</button><button class="btn" id="tadd">ചേർക്കുക</button></div>`);
+  $("#tadd").onclick=async()=>{$("#tadd").disabled=true;
+    try{await api("team-admin",{action:"create",display_name:$("#tn").value,role:$("#tr").value,username:$("#tu").value,password:$("#tp").value});toast("✔ ചേർത്തു");await load(true);teamForm();}
+    catch(e){toast(e.message,true);$("#tadd").disabled=false;}};
+  $("#mbox").querySelectorAll("[data-mem]").forEach(b=>b.onclick=()=>memberForm(team.find(t=>t.user_id===b.dataset.mem)));
+}
+function memberForm(t){
+  const self=t.user_id===me.user_id;
+  modal(`<h3>${esc(t.display_name)}</h3><div class="note">@${esc(t.username)} · ${ROLE_ML[t.role]}</div>
+    <label class="fld"><span>പേര്</span><input id="mn" value="${esc(t.display_name)}"></label>
+    ${self?"":`<label class="fld"><span>റോൾ</span><select id="mr">${["doctor","editor","uploader"].map(r=>`<option value="${r}" ${r===t.role?"selected":""}>${ROLE_ML[r]}</option>`).join("")}</select></label>`}
+    ${t.role==="doctor"?`<label class="fld"><span>ബട്ടൺ ക്രമം</span><input id="mo" type="number" value="${t.sort_order}"></label>`:""}
+    <div class="mrow"><button class="btn sec" id="mback">←</button><button class="btn" id="msave">Save</button></div>
+    <div class="lbl">പുതിയ Password</div><label class="fld"><input id="mp" autocapitalize="none"></label>
+    <button class="btn sec" id="mpw">Password മാറ്റുക</button>
+    ${self?"":`<button class="btn" id="mact" style="margin-top:10px;background:${t.is_active?"var(--red)":"var(--g3)"}">${t.is_active?"ലോഗിൻ ഓഫ് ആക്കുക":"വീണ്ടും ഓൺ ആക്കുക"}</button>`}`);
+  $("#mback").onclick=teamForm;
+  $("#msave").onclick=async()=>{try{await api("team-admin",{action:"update",user_id:t.user_id,display_name:$("#mn").value,role:$("#mr")?.value,sort_order:$("#mo")?.value});toast("Saved");await load(true);teamForm();}catch(e){toast(e.message,true);}};
+  $("#mpw").onclick=async()=>{try{await api("team-admin",{action:"password",user_id:t.user_id,password:$("#mp").value});toast("✔ Password മാറ്റി");$("#mp").value="";}catch(e){toast(e.message,true);}};
+  if($("#mact"))$("#mact").onclick=async()=>{if(!confirm("ഉറപ്പാണോ?"))return;try{await api("team-admin",{action:"update",user_id:t.user_id,is_active:!t.is_active});await load(true);teamForm();}catch(e){toast(e.message,true);}};
+}
+
+/* ---------- PUSH ---------- */
+let pushState="unknown"; // on | off | blocked | unsupported
+const b64=s=>{const p="=".repeat((4-s.length%4)%4),r=atob((s+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from([...r].map(c=>c.charCodeAt(0)));};
+async function initPush(){
+  if(!("serviceWorker" in navigator)||!("PushManager" in window)){pushState="unsupported";return updBell();}
+  try{
+    const reg=await navigator.serviceWorker.register("sw.js");
+    const sub=await reg.pushManager.getSubscription();
+    if(Notification.permission==="denied")pushState="blocked";
+    else if(sub&&Notification.permission==="granted"){pushState="on";api("vt-push",{action:"subscribe",subscription:sub.toJSON()}).catch(()=>{});}
+    else pushState="off";
+  }catch{pushState="unsupported";}
+  updBell();render();
+}
+function updBell(){$("#bellDot").classList.toggle("hide",pushState==="on"||pushState==="unsupported");}
+async function enablePush(){
+  if(pushState==="unsupported")return toast("ഈ ഫോണിൽ/ബ്രൗസറിൽ notification പറ്റില്ല. Chrome-ൽ തുറക്കൂ.",true);
+  if(pushState==="on"){try{await api("vt-push",{action:"test"});toast("Test notification അയച്ചു");}catch(e){toast(e.message,true);}return;}
+  const perm=await Notification.requestPermission();
+  if(perm!=="granted"){pushState="blocked";updBell();render();return toast("Notification ബ്ലോക്ക് ആണ്. Chrome settings-ൽ ഈ സൈറ്റിന് Allow കൊടുക്കൂ.",true);}
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const {publicKey}=await api("vt-push",{action:"public_key"});
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(publicKey)});
+    await api("vt-push",{action:"subscribe",subscription:sub.toJSON()});
+    pushState="on";updBell();render();
+    await api("vt-push",{action:"test"});toast("🔔 ഓൺ ആയി");
+  }catch(e){toast("Notification ഓൺ ആക്കാൻ പറ്റിയില്ല: "+e.message,true);}
+}
+
+/* ---------- MENU ---------- */
+const drawer=$("#drawer"),scrim=$("#scrim");
+const toggleDrawer=o=>{drawer.classList.toggle("open",o);scrim.classList.toggle("hide",!o);};
+$("#menuBtn").onclick=()=>toggleDrawer(true);scrim.onclick=()=>toggleDrawer(false);
+drawer.addEventListener("click",async e=>{const g=e.target.closest("[data-go]")?.dataset.go;if(!g)return;toggleDrawer(false);
+  if(g==="bell")enablePush();if(g==="team")teamForm();
+  if(g==="logout"){if(!confirm("Logout ചെയ്യണോ?"))return;
+    try{const reg=await navigator.serviceWorker?.getRegistration();const sub=await reg?.pushManager.getSubscription();if(sub){await api("vt-push",{action:"unsubscribe",endpoint:sub.endpoint}).catch(()=>{});await sub.unsubscribe();}}catch{}
+    await sb.auth.signOut();location.reload();}});
+$("#bellBtn").onclick=enablePush;
+$("#refreshBtn").onclick=async()=>{await load();toast("Updated");};
+start();
+</script>
+</body>
+</html>
