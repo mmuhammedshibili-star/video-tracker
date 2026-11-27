@@ -524,7 +524,7 @@ const hasAssets=v=>!!(v.yt_thumb_path||v.ig_thumb_path||v.fb_thumb_path||v.seo_t
 function assetChip(v){
   if(!canAttach(v)&&!hasAssets(v))return "";
   const ok=(b,l)=>`<span class="ach ${b?"on":""}">${b?"✓":"○"} ${l}</span>`;
-  return `<button class="asset" data-assets="${v.id}"><span class="al">📎 തമ്പ്നെയിൽ & SEO</span>${ok(v.yt_thumb_path,"YT")}${ok(v.ig_thumb_path,"Insta")}${ok(v.seo_title||v.seo_desc,"SEO")}</button>`;
+  return `<button class="asset" data-assets="${v.id}"><span class="al">📎 തമ്പ്നെയിൽ & SEO</span>${ok(v.yt_thumb_path,"YT")}${ok(v.ig_thumb_path,"Insta/FB")}${ok(v.seo_title||v.seo_desc,"SEO")}</button>`;
 }
 async function shrink(file,maxW=1280){ // ≤1280px (YT) / ≤1080px (Insta) wide JPEG, ~200–600 KB: keeps storage & egress small
   const bmp=await createImageBitmap(file);
@@ -554,7 +554,7 @@ function assetsForm(v){
     ?`<label class="fld"><span>${l}</span>${rows?`<textarea id="${id}" rows="${rows}">${esc(val||"")}</textarea>`:`<input id="${id}" value="${esc(val||"")}">`}</label>`
     :(val?`<div class="cp"><div class="cpl">${l}<button class="lnk" data-copy="${id}">📋 Copy</button></div><div class="cpt" id="${id}">${esc(val)}</div></div>`:"");
   modal(`<h3>${esc(v.title)}</h3>
-    ${thumb("yt","▶ YouTube തമ്പ്നെയിൽ")}${thumb("ig","◎ Instagram തമ്പ്നെയിൽ")}${v.fb_thumb_path?thumb("fb","f Facebook തമ്പ്നെയിൽ"):""}
+    ${thumb("yt","▶ YouTube തമ്പ്നെയിൽ")}${thumb("ig","◎ Instagram / Facebook തമ്പ്നെയിൽ")}${v.fb_thumb_path?thumb("fb","f Facebook തമ്പ്നെയിൽ"):""}
     <div class="sech">🔎 SEO</div>
     ${fld("s1","YouTube Title",v.seo_title)}${fld("s2","Description",v.seo_desc,5)}${fld("s3","Tags",v.seo_tags,2)}${fld("s4","Facebook Caption",v.fb_caption,3)}
     ${!edit&&!(v.seo_title||v.seo_desc||v.seo_tags||v.fb_caption)?`<div class="note">SEO ഇട്ടിട്ടില്ല</div>`:""}
@@ -571,7 +571,7 @@ function assetsForm(v){
       const {data:old,error}=await sb.rpc("vt_set_thumb",{p_id:v.id,p_which:w,p_path:path});
       if(error){await sb.storage.from(BUCKET).remove([path]);throw error;}
       if(old)sb.storage.from(BUCKET).remove([old]).catch(()=>{});
-      toast("✔ തമ്പ്നെയിൽ ഇട്ടു");if(w!=="ig")await autoTick(v,w+"_thumb");
+      toast("✔ തമ്പ്നെയിൽ ഇട്ടു");await autoTick(v,w==="yt"?"yt_thumb":"fb_thumb");
     }catch(e){toast(errMsg(e),true);}
     reopenAssets(v.id);
   });
